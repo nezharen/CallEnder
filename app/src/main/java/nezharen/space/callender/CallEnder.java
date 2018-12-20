@@ -3,13 +3,9 @@ package nezharen.space.callender;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.media.AudioManager;
+import android.telecom.TelecomManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
-
-import com.android.internal.telephony.ITelephony;
-
-import java.lang.reflect.Method;
 
 public class CallEnder extends BroadcastReceiver {
 
@@ -21,28 +17,29 @@ public class CallEnder extends BroadcastReceiver {
         if (intent.getAction().equals("android.intent.action.NEW_OUTGOING_CALL")) {
 
         } else {
-            String state = intent.getExtras().getString(TelephonyManager.EXTRA_STATE);
-            String number = intent.getExtras().getString(TelephonyManager.EXTRA_INCOMING_NUMBER);
-            if (state.equals(TelephonyManager.EXTRA_STATE_RINGING)) {
-                Log.v(TAG, "Incoming number detected: " + number);
 
-                AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-                Log.v(TAG, "Silent mode.");
-                audioManager.setRingerMode(AudioManager.RINGER_MODE_SILENT);
-                try {
-                    Method getITelephonyMethod = TelephonyManager.class.getDeclaredMethod("getITelephony", (Class[])null);
-                    getITelephonyMethod.setAccessible(true);
-                    TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-                    ITelephony iTelephony = (ITelephony) getITelephonyMethod.invoke(telephonyManager, (Object[])null);
-                    iTelephony.endCall();
-                    Log.v(TAG, "Block success: " + number);
-                } catch (Exception e) {
-                    Log.e(TAG, "Block failed: " + number);
+            String state = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
+            if (state.equals(TelephonyManager.EXTRA_STATE_RINGING)) {
+                if (!intent.hasExtra(TelephonyManager.EXTRA_INCOMING_NUMBER))
+                    return;
+                String number = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER);
+                Log.v(TAG, "Incoming number detected: " + number);
+                if (DataBase.getInstance(context.getApplicationContext()).matchNumber(number)) {
+                    try {
+                        TelecomManager telecomManager = (TelecomManager) context.getSystemService(Context.TELECOM_SERVICE);
+                        telecomManager.endCall();
+                        Log.v(TAG, "Block success: " + number);
+                    } catch (SecurityException se) {
+                        Log.e(TAG, "Block failed: " + number + "due to permission.");
+                    } catch (Exception e) {
+                        Log.e(TAG, "Block failed: " + number);
+                        Log.d(TAG, e.getMessage());
+                    }
+                } else {
+                    Log.v(TAG, "Pass: " + number);
                 }
             } else {
-                Log.v(TAG, "Normal mode.");
-                AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-                audioManager.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
+
             }
         }
     }

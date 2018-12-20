@@ -1,29 +1,38 @@
 package nezharen.space.callender;
 
 import android.Manifest;
-import android.app.AlertDialog;
-import android.app.NotificationManager;
-import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.os.Build;
+import android.database.Cursor;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 import android.widget.Toast;
+
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final int PERMISSION_REQUEST_CODE = 0;
+    private static final String[] permission_list = {
+            Manifest.permission.PROCESS_OUTGOING_CALLS,
+            Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.READ_CALL_LOG,
+            Manifest.permission.ANSWER_PHONE_CALLS
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,48 +45,63 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                AlertDialog.Builder aBuilder = new AlertDialog.Builder(MainActivity.this);
+                aBuilder.setIcon(R.mipmap.ic_launcher);
+                aBuilder.setTitle(getString(R.string.app_name));
+                LayoutInflater inflater = MainActivity.this.getLayoutInflater();
+                final View dialog_add_view = inflater.inflate(R.layout.dialog_add, null);
+                aBuilder.setView(dialog_add_view);
+                aBuilder.setPositiveButton(getString(R.string.OK), new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        EditText numberEditText = (EditText) dialog_add_view.findViewById(R.id.number_edit_text);
+                        String number_add = numberEditText.getText().toString().trim();
+                        if (DataBase.getInstance(getApplicationContext()).insertNumber(number_add)) {
+                            refreshListView();
+                        }
+                    }
+                });
+                aBuilder.setNegativeButton(getString(R.string.cancel), null);
+                aBuilder.setCancelable(false);
+                aBuilder.show();
             }
         });
 
         checkForPermission();
+        refreshListView();
+    }
+
+
+    private void checkForPermission() {
+        for (String i : permission_list) {
+            if (ContextCompat.checkSelfPermission(this, i) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, permission_list, PERMISSION_REQUEST_CODE);
+                break;
+            }
+        }
+    }
+
+    private void refreshListView() {
+        Cursor c = DataBase.getInstance(getApplicationContext()).getAllNumbers();
+        SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.number_list_item, c,
+                new String[] {"number"}, new int[] {R.id.number_text_view});
+        ListView listView = (ListView) findViewById(R.id.number_list_view);
+        listView.setAdapter(adapter);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         switch (requestCode) {
             case PERMISSION_REQUEST_CODE: {
-                if (grantResults.length < 2
-                        || grantResults[0] != PackageManager.PERMISSION_GRANTED
-                        || grantResults[1] != PackageManager.PERMISSION_GRANTED) {
+                if (grantResults.length < permission_list.length) {
                     Toast.makeText(this, R.string.no_permission, Toast.LENGTH_LONG).show();
                 }
+                for (int i : grantResults) {
+                    if (i != PackageManager.PERMISSION_GRANTED) {
+                        Toast.makeText(this, R.string.no_permission, Toast.LENGTH_LONG).show();
+                        break;
+                    }
+                }
             }
-        }
-    }
-
-    void checkForPermission() {
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                !notificationManager.isNotificationPolicyAccessGranted()) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setMessage(R.string.DnD_permission)
-                    .setPositiveButton(R.string.OK, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            Intent intent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
-                            startActivity(intent);
-                        }
-                    }).create().show();
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.PROCESS_OUTGOING_CALLS) !=
-                PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(Manifest.permission.READ_PHONE_STATE) !=
-                        PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.PROCESS_OUTGOING_CALLS,
-                            Manifest.permission.READ_PHONE_STATE}, PERMISSION_REQUEST_CODE);
         }
     }
 

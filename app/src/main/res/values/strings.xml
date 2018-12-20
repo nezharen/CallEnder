@@ -4,4 +4,7 @@
     <string name="no_permission">Permission not granted. This app may fail to work.</string>
     <string name="DnD_permission">Permission to set Do Not Disturb mode is required.</string>
     <string name="OK">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="input_number">e.g. 1351234....</string>
+    <string name="database_name">number_db</string>
 </resources>
