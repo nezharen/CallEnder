@@ -61,6 +61,13 @@ public class DataBase {
         return false;
     }
 
+    public boolean deleteNumber(String number) {
+        String sql = "delete from number_tb where number='" + number + "'";
+        Log.v(TAG, sql);
+        db.execSQL(sql);
+        return true;
+    }
+
     public Cursor getAllNumbers() {
         return db.rawQuery("select * from number_tb", new String[]{});
     }

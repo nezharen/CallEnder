@@ -1,10 +1,16 @@
 <resources>
     <string name="app_name">CallEnder</string>
-    <string name="action_settings">Settings</string>
+    <string name="action_help">Help</string>
     <string name="no_permission">Permission not granted. This app may fail to work.</string>
     <string name="DnD_permission">Permission to set Do Not Disturb mode is required.</string>
     <string name="OK">OK</string>
     <string name="cancel">Cancel</string>
     <string name="input_number">e.g. 1351234....</string>
     <string name="database_name">number_db</string>
+    <string name="sure_to_delete_number">Sure to delete number %1$s?</string>
+    <string name="help_text">
+        Add a phone number or pattern into the blacklist. One \'.\' can match any single digit.\nTo
+        delete pattern from blacklist, long click the item.
+    </string>
+    <string name="title_activity_help">CallEnder Help</string>
 </resources>

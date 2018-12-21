@@ -23,6 +23,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".HelpActivity"
+            android:label="@string/title_activity_help"
+            android:theme="@style/AppTheme.NoActionBar">
+        </activity>
         <receiver android:name=".CallEnder" >
             <intent-filter>
                 <action android:name="android.intent.action.NEW_OUTGOING_CALL" />

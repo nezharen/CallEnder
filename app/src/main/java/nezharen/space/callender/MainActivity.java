@@ -2,6 +2,7 @@ package nezharen.space.callender;
 
 import android.Manifest;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -12,17 +13,17 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ArrayAdapter;
+import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
+import android.widget.TextView;
 import android.widget.Toast;
-
-import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -34,12 +35,37 @@ public class MainActivity extends AppCompatActivity {
             Manifest.permission.ANSWER_PHONE_CALLS
     };
 
+    private ListView listView;
+    private String numberToDelete;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        listView = (ListView) findViewById(R.id.number_list_view);
+        listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
+                Cursor c = (Cursor) adapterView.getItemAtPosition(i);
+                numberToDelete = c.getString(c.getColumnIndex("number"));
+                AlertDialog.Builder aBuilder = new AlertDialog.Builder(MainActivity.this);
+                aBuilder.setIcon(R.mipmap.ic_launcher);
+                aBuilder.setTitle(getString(R.string.app_name));
+                aBuilder.setMessage(String.format(getString(R.string.sure_to_delete_number), numberToDelete));
+                aBuilder.setPositiveButton(getString(R.string.OK), new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        if (DataBase.getInstance(getApplicationContext()).deleteNumber(numberToDelete)) {
+                            refreshListView();
+                        }
+                    }
+                });
+                aBuilder.setNegativeButton(getString(R.string.cancel), null);
+                aBuilder.show();
+                return true;
+            }
+        });
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -52,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
                 final View dialog_add_view = inflater.inflate(R.layout.dialog_add, null);
                 aBuilder.setView(dialog_add_view);
                 aBuilder.setPositiveButton(getString(R.string.OK), new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
+                    public void onClick(DialogInterface dialog, int id) {
                         EditText numberEditText = (EditText) dialog_add_view.findViewById(R.id.number_edit_text);
                         String number_add = numberEditText.getText().toString().trim();
                         if (DataBase.getInstance(getApplicationContext()).insertNumber(number_add)) {
@@ -84,7 +110,6 @@ public class MainActivity extends AppCompatActivity {
         Cursor c = DataBase.getInstance(getApplicationContext()).getAllNumbers();
         SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.number_list_item, c,
                 new String[] {"number"}, new int[] {R.id.number_text_view});
-        ListView listView = (ListView) findViewById(R.id.number_list_view);
         listView.setAdapter(adapter);
     }
 
@@ -120,7 +145,9 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_help_menu_item) {
+            Intent intent = new Intent(this, HelpActivity.class);
+            startActivity(intent);
             return true;
         }
 
